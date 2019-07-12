@@ -2,15 +2,31 @@ import React from 'react';
 
 import './Console.css';
 
+let scrollback = 0;
+
 export default function Console (props) {
     const { history, sendCommand } = props;
     const [ input, setInput ] = React.useState("");
     const ref = React.useRef();
 
-    function handleInput () {
+    function handleInput (e) {
         sendCommand(input);
         setInput("");
         setTimeout(() => ref.current.scrollTop = ref.current.scrollHeight, 10);
+        scrollback = 0;
+    }
+
+    function handleScrollback (down=false) {
+        const inputs = history.filter(h => h.type === "input");
+
+        if (down && scrollback > 1) {
+            scrollback--;
+        }
+        else if (!down && scrollback < inputs.length) {
+            scrollback++;
+        }
+
+        setInput(inputs[inputs.length - scrollback].content);
     }
 
     return (
@@ -36,6 +52,8 @@ export default function Console (props) {
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => {
                         if (e.key === "Enter") { handleInput(); }
+                        else if (e.key === "ArrowUp") { handleScrollback(); e.preventDefault(); }
+                        else if (e.key === "ArrowDown") { handleScrollback(true); e.preventDefault(); }
                     }}
                 />
                 <button onClick={handleInput}>Send</button>

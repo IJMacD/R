@@ -157,6 +157,8 @@ function evaluateNumeric (context, token) {
 
     if (typeof v === "undefined") {
         throw Error("symbol not found: " + token.value);
+    } else if (typeof v !== "number") {
+        throw Error(`Variable '${token.value}' does not contain a numeric value`);
     }
 
     return v;
