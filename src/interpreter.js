@@ -37,45 +37,33 @@ export default function interpreter (command, context, setContext) {
             throw Error("Expression not supported");
         }
 
-        switch (t2.value) {
-            case "<-":
-                if (t1.type !== "name" || (t3.type !== "string" && t3.type !== "number")) {
-                    throw Error(`Invalid operands to '<-': [${t1.value}, ${t3.value}]`);
-                }
-                setContext({
-                    ...context,
-                    [t1.value]: t3.value,
-                });
-                return;
-            case "->":
-                if (t3.type !== "name" || (t1.type !== "string" && t1.type !== "number")) {
-                    throw Error(`Invalid operands to '->': [${t1.value}, ${t3.value}]`);
-                }
-                setContext({
-                    ...context,
-                    [t3.value]: t1.value,
-                });
-                return;
-            case "+": {
-                const v1 = checkNumericValue(context, t1);
-                const v3 = checkNumericValue(context, t3);
-                return v1 + v3;
-            }
-            case "-": {
-                const v1 = checkNumericValue(context, t1);
-                const v3 = checkNumericValue(context, t3);
-                return v1 - v3;
-            }
-            case "*": {
-                const v1 = checkNumericValue(context, t1);
-                const v3 = checkNumericValue(context, t3);
-                return v1 * v3;
-            }
-            case "/": {
-                const v1 = checkNumericValue(context, t1);
-                const v3 = checkNumericValue(context, t3);
-                return v1 / v3;
-            }
+        if (t2.value === "<-" && t1.type === "name") {
+            return assignValue(context, setContext, t1.value, evaluateValue(context, t3));
+        } else if (t2.value === "->" && t3.type === "name") {
+            return assignValue(context, setContext, t3.value, evaluateValue(context, t1));
+        }
+
+        return evaluateExpression(context, t1, t2.value, t3);
+    }
+
+    if (tokens.length === 5) {
+        const t1 = tokens[0];
+        const t2 = tokens[1];
+        const t3 = tokens[2];
+        const t4 = tokens[3];
+        const t5 = tokens[4];
+
+        if (t2.type !== "operator" || t4.type !== "operator")
+        {
+            throw Error("Expression not supported");
+        }
+
+        if (t2.value === "<-" && (t4.value !== "<-" && t4.value !== "->") && t1.type === "name") {
+            const val = evaluateExpression(context, t3, t4.value, t5);
+            return assignValue(context, setContext, t1.value, val);
+        } else if (t4.value === "->" && (t2.value !== "<-" && t2.value !== "->") && t5.type === "name") {
+            const val = evaluateExpression(context, t1, t2.value, t3);
+            return assignValue(context, setContext, t5.value, val);
         }
     }
 
@@ -139,8 +127,17 @@ function tokenizer (input) {
     return tokens;
 }
 
-function checkNumericValue (context, token) {
+function evaluateValue (context, token) {
+    const v = token.type === "name" ? context[token.value] : token.value;
 
+    if (typeof v === "undefined") {
+        throw Error("symbol not found: " + token.value);
+    }
+
+    return v;
+}
+
+function evaluateNumeric (context, token) {
     if (token.type !== "number" && token.type !== "name") {
         throw Error(`Invalid numeric value: [${token.value}]`);
     }
@@ -152,4 +149,33 @@ function checkNumericValue (context, token) {
     }
 
     return v;
+}
+
+function assignValue (context, setContext, name, value) {
+    setContext({
+        ...context,
+        [name]: value,
+    });
+}
+
+function evaluateExpression (context, t1, op, t3) {
+    const v1 = evaluateNumeric(context, t1);
+    const v3 = evaluateNumeric(context, t3);
+
+    switch (op) {
+        case "+": {
+            return v1 + v3;
+        }
+        case "-": {
+            return v1 - v3;
+        }
+        case "*": {
+            return v1 * v3;
+        }
+        case "/": {
+            return v1 / v3;
+        }
+    }
+
+    throw Error("Unrecognised operator: " + op);
 }
