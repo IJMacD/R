@@ -64,6 +64,9 @@ export default function interpreter (command, context, setContext) {
         } else if (t4.value === "->" && (t2.value !== "<-" && t2.value !== "->") && t5.type === "name") {
             const val = evaluateExpression(context, t1, t2.value, t3);
             return assignValue(context, setContext, t5.value, val);
+        } else {
+            const val = evaluateExpression(context, t1, t2.value, t3);
+            return evaluateExpression(context, val, t4.value, t5);
         }
     }
 
@@ -114,7 +117,7 @@ function tokenizer (input) {
         if (i < input.length) {
             tail = input.substr(i);
 
-            const whitespaceMatch = /^\s+/.exec(tail);
+            const whitespaceMatch = /^\s*/.exec(tail);
             if (whitespaceMatch) {
                 i += whitespaceMatch[0].length;
                 continue;
@@ -128,6 +131,10 @@ function tokenizer (input) {
 }
 
 function evaluateValue (context, token) {
+    if (typeof token === "number" || typeof token === "string") {
+        return token;
+    }
+
     const v = token.type === "name" ? context[token.value] : token.value;
 
     if (typeof v === "undefined") {
@@ -138,6 +145,10 @@ function evaluateValue (context, token) {
 }
 
 function evaluateNumeric (context, token) {
+    if (typeof token === "number") {
+        return token;
+    }
+
     if (token.type !== "number" && token.type !== "name") {
         throw Error(`Invalid numeric value: [${token.value}]`);
     }
