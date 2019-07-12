@@ -1,0 +1,45 @@
+.Console,
+.Console input,
+.Console button {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13.333333px;
+}
+
+.Console {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.Console-historyscroller {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.Console-history {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.Console-history .line-output {
+    color: #666;
+}
+
+.Console-history .line-error {
+    color: #D33;
+}
+
+.Console-inputline {
+    display: flex;
+}
+
+.Console-input {
+    flex: 1;
+    border: 0;
+    margin-left: 4px;
+}
+
+.Console-input:focus {
+    outline: none;
+}
