@@ -8,6 +8,7 @@ export default function Console (props) {
     const { history, sendCommand } = props;
     const [ input, setInput ] = React.useState("");
     const ref = React.useRef();
+    const inputRef = React.useRef();
 
     function handleInput (e) {
         sendCommand(input);
@@ -30,7 +31,7 @@ export default function Console (props) {
     }
 
     return (
-        <div className="Console">
+        <div className="Console" onClick={() => inputRef.current && document.getSelection().isCollapsed && inputRef.current.focus()}>
             <div className="Console-historyscroller" ref={ref}>
                 <ul className="Console-history">
                 {
@@ -49,6 +50,7 @@ export default function Console (props) {
                     value={input}
                     className="Console-input"
                     autoFocus
+                    ref={inputRef}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => {
                         if (e.key === "Enter") { handleInput(); }
