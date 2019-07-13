@@ -274,6 +274,18 @@ function evaluateExpression (context, t1, op, t3) {
         return evaluateVectorExpression(context, t1, op, t3);
     }
 
+    if (isVector(context, t1) && isNumeric(context, t3)) {
+        return evaluateVectorScalarExpression(context, t1, op, t3);
+    }
+
+    if (isNumeric(context, t1) && isVector(context, t3)) {
+        if (op === ">") op = "<";
+        else if (op === ">") op = "<";
+        else if (op === ">=") op = "<=";
+        else if (op === "<=") op = ">=";
+        return evaluateVectorScalarExpression(context, t3, op, t1);
+    }
+
     throw Error("Invalid expression");
 }
 
@@ -377,6 +389,58 @@ function evaluateVectorExpression (context, t1, op, t3) {
         }
         case "||": {
             return v1.every((v,i) => v || v3[i]);
+        }
+    }
+
+    throw Error("Unrecognised operator: " + op);
+}
+
+function evaluateVectorScalarExpression (context, t1, op, t3) {
+    const v1 = evaluateVector(context, t1);
+    const v3 = evaluateNumeric(context, t3);
+
+    switch (op) {
+        case "+": {
+            return v1.map(v => v + v3);
+        }
+        case "-": {
+            return v1.map(v => v - v3);
+        }
+        case "*": {
+            return v1.map(v => v * v3);
+        }
+        case "/": {
+            return v1.map(v => v / v3);
+        }
+        case "==": {
+            return v1.map(v => v == v3);
+        }
+        case "!=": {
+            return v1.map(v => v != v3);
+        }
+        case "<": {
+            return v1.map(v => v < v3);
+        }
+        case ">": {
+            return v1.map(v => v > v3);
+        }
+        case "<=": {
+            return v1.map(v => v <= v3);
+        }
+        case ">=": {
+            return v1.map(v => v >= v3);
+        }
+        case "&": {
+            return v1.map(v => Boolean(v && v3));
+        }
+        case "|": {
+            return v1.map(v => Boolean(v || v3));
+        }
+        case "&&": {
+            return v1.every(v => v && v3);
+        }
+        case "||": {
+            return v1.every(v => v || v3);
         }
     }
 
