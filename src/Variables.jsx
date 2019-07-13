@@ -10,14 +10,18 @@ export default function Variables (props) {
 
     return (
         <form onSubmit={e => {
-                const v = isNaN(+inputValue) ? inputValue : +inputValue;
-                setVariables({ ...variables, [inputName]: v });
-                setInputName("");
-                setInputValue("");
-                if (typeof ref !== "undefined" && typeof ref.current !== "undefined") ref.current.focus();
-                e.preventDefault();
-            }}
-        >
+            let v;
+            try {
+                v = JSON.parse(inputValue);
+            } catch (e) {
+                v = inputValue;
+            }
+            setVariables({ ...variables, [inputName]: v });
+            setInputName("");
+            setInputValue("");
+            if (typeof ref !== "undefined" && typeof ref.current !== "undefined") ref.current.focus();
+            e.preventDefault();
+        }}>
             <table className="Variables">
                 <thead>
                     <tr><th>Name</th><th>Value</th></tr>

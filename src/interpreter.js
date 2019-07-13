@@ -108,7 +108,7 @@ const GRAMMAR = {
         match: /^[a-z][a-z0-9_.]*/i,
     },
     operator: {
-        match: /^(<-|->|==|<=|>=|[-+*/<>])/,
+        match: /^(<-|->|==|!=|<=|>=|&&|\|\||[-+*/<>&|])/,
     },
     bracket: {
         match: /^[()]/,
@@ -168,6 +168,46 @@ function evaluateValue (context, token) {
     return v;
 }
 
+function isNumeric (context, token) {
+    if (typeof token === "number") {
+        return true;
+    }
+
+    if (token.type !== "number" && token.type !== "name") {
+        return false;
+    }
+
+    const v = token.type === "name" ? context[token.value] : token.value;
+
+    if (typeof v === "undefined") {
+        throw Error("Symbol not found: " + token.value);
+    } else if (typeof v !== "number") {
+        return false;
+    }
+
+    return true;
+}
+
+function isVector (context, token) {
+    if (Array.isArray(token)) {
+        return true;
+    }
+
+    if (token.type !== "name") {
+        return false;
+    }
+
+    const v = context[token.value];
+
+    if (typeof v === "undefined") {
+        throw Error("Symbol not found: " + token.value);
+    } else if (!Array.isArray(v)) {
+        return false;
+    }
+
+    return true;
+}
+
 function evaluateNumeric (context, token) {
     if (typeof token === "number") {
         return token;
@@ -188,6 +228,31 @@ function evaluateNumeric (context, token) {
     return v;
 }
 
+/**
+ *
+ * @param {*} context
+ * @param {*} token
+ * @returns {number[]}
+ */
+function evaluateVector (context, token) {
+    if (Array.isArray(token)) {
+        return token;
+    }
+
+    if (token.type !== "name") {
+        throw Error(`Invalid vector value: [${token.value}]`);
+    }
+
+    const v = context[token.value];
+
+    if (typeof v === "undefined") {
+        throw Error("Symbol not found: " + token.value);
+    } else if (!Array.isArray(v)) {
+        throw Error(`Variable '${token.value}' does not contain a vector value`);
+    }
+    return v;
+}
+
 function assignVariable (context, setContext, name, value) {
     setContext({
         ...context,
@@ -201,6 +266,18 @@ function removeVariable (context, setContext, name) {
 }
 
 function evaluateExpression (context, t1, op, t3) {
+    if (isNumeric(context, t1) && isNumeric(context, t3)) {
+        return evaluteScalarExpression(context, t1, op, t3);
+    }
+
+    if (isVector(context, t1) && isVector(context, t3)) {
+        return evaluateVectorExpression(context, t1, op, t3);
+    }
+
+    throw Error("Invalid expression");
+}
+
+function evaluteScalarExpression (context, t1, op, t3) {
     const v1 = evaluateNumeric(context, t1);
     const v3 = evaluateNumeric(context, t3);
 
@@ -220,6 +297,9 @@ function evaluateExpression (context, t1, op, t3) {
         case "==": {
             return v1 == v3;
         }
+        case "!=": {
+            return v1 != v3;
+        }
         case "<": {
             return v1 < v3;
         }
@@ -231,6 +311,72 @@ function evaluateExpression (context, t1, op, t3) {
         }
         case ">=": {
             return v1 >= v3;
+        }
+        case "&&": {
+            return Boolean(v1 && v3);
+        }
+        case "||": {
+            return Boolean(v1 || v3);
+        }
+        case "&":
+            throw Error("Use && to compare numbers");
+        case "|":
+            throw Error("Use || to compare numbers");
+    }
+
+    throw Error("Unrecognised operator: " + op);
+}
+
+function evaluateVectorExpression (context, t1, op, t3) {
+    const v1 = evaluateVector(context, t1);
+    const v3 = evaluateVector(context, t3);
+
+    if (v1.length != v3.length) {
+        throw Error(`Vector lengths do not match: ${v1.length} and ${v3.length}`)
+    }
+
+    switch (op) {
+        case "+": {
+            return v1.map((v,i) => v + v3[i]);
+        }
+        case "-": {
+            return v1.map((v,i) => v - v3[i]);
+        }
+        case "*": {
+            return v1.map((v,i) => v * v3[i]);
+        }
+        case "/": {
+            return v1.map((v,i) => v / v3[i]);
+        }
+        case "==": {
+            return v1.map((v,i) => v == v3[i]);
+        }
+        case "!=": {
+            return v1.map((v,i) => v != v3[i]);
+        }
+        case "<": {
+            return v1.map((v,i) => v < v3[i]);
+        }
+        case ">": {
+            return v1.map((v,i) => v > v3[i]);
+        }
+        case "<=": {
+            return v1.map((v,i) => v <= v3[i]);
+        }
+        case ">=": {
+            return v1.map((v,i) => v >= v3[i]);
+        }
+        case "&": {
+            return v1.map((v,i) => Boolean(v && v3[i]));
+        }
+        case "|": {
+            return v1.map((v,i) => Boolean(v || v3[i]));
+        }
+        case "&&": {
+            return v1.every((v,i) => v && v3[i]);
+        }
+        case "||": {
+            return v1.every((v,i) => v || v3[i]);
         }
     }
 
