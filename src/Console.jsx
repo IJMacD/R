@@ -12,7 +12,7 @@ export default function Console (props) {
     function handleInput (e) {
         sendCommand(input);
         setInput("");
-        setTimeout(() => ref.current.scrollTop = ref.current.scrollHeight, 10);
+        setTimeout(() => typeof ref.current !== "undefined" && (ref.current.scrollTop = ref.current.scrollHeight), 10);
         scrollback = 0;
     }
 

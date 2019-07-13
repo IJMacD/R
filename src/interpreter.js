@@ -3,6 +3,7 @@
  * @param {string} command
  * @param {{ [name: string]: any }} context
  * @param {(context: { [name: string]: any }) => void} setContext
+ * @returns {string}
  */
 export default function interpreter (command, context, setContext) {
     if (command.length === 0) {
@@ -38,12 +39,31 @@ export default function interpreter (command, context, setContext) {
         }
 
         if (t2.value === "<-" && t1.type === "name") {
-            return assignValue(context, setContext, t1.value, evaluateValue(context, t3));
+            assignVariable(context, setContext, t1.value, evaluateValue(context, t3));
+            return;
         } else if (t2.value === "->" && t3.type === "name") {
-            return assignValue(context, setContext, t3.value, evaluateValue(context, t1));
+            assignVariable(context, setContext, t3.value, evaluateValue(context, t1));
+            return;
         }
 
-        return evaluateExpression(context, t1, t2.value, t3);
+        return JSON.stringify(evaluateExpression(context, t1, t2.value, t3));
+    }
+
+    if (tokens.length === 4) {
+        const t1 = tokens[0];
+        const t2 = tokens[1];
+        const t3 = tokens[2];
+        const t4 = tokens[3];
+
+        if (t1.type === "name" && t2.type === "bracket" &&
+            t3.type === "name" && t4.type === "bracket")
+        {
+            switch (t1.value) {
+                case "rm":
+                    removeVariable(context, setContext, t3.value);
+                    return;
+            }
+        }
     }
 
     if (tokens.length === 5) {
@@ -60,13 +80,15 @@ export default function interpreter (command, context, setContext) {
 
         if (t2.value === "<-" && (t4.value !== "<-" && t4.value !== "->") && t1.type === "name") {
             const val = evaluateExpression(context, t3, t4.value, t5);
-            return assignValue(context, setContext, t1.value, val);
+            assignVariable(context, setContext, t1.value, val);
+            return;
         } else if (t4.value === "->" && (t2.value !== "<-" && t2.value !== "->") && t5.type === "name") {
             const val = evaluateExpression(context, t1, t2.value, t3);
-            return assignValue(context, setContext, t5.value, val);
+            assignVariable(context, setContext, t5.value, val);
+            return;
         } else {
             const val = evaluateExpression(context, t1, t2.value, t3);
-            return evaluateExpression(context, val, t4.value, t5);
+            return JSON.stringify(evaluateExpression(context, val, t4.value, t5));
         }
     }
 
@@ -83,10 +105,17 @@ const GRAMMAR = {
         map: m => +m[0],
     },
     name: {
-        match: /^[a-z][a-z0-9_]*/,
+        match: /^[a-z][a-z0-9_.]*/i,
     },
     operator: {
-        match: /^(<-|->|\+|-|\*|\/)/,
+        match: /^(<-|->|==|<=|>=|[-+*/<>])/,
+    },
+    bracket: {
+        match: /^[()]/,
+    },
+    whitespace: {
+        match: /^\s+/,
+        ignore: true,
     },
 };
 
@@ -100,29 +129,24 @@ function tokenizer (input) {
 
     while (i < input.length) {
         let tail = input.substr(i);
+        let match;
 
         for (const type in GRAMMAR) {
             const g = GRAMMAR[type];
-            const match = g.match.exec(tail);
+            match = g.match.exec(tail);
             if (match) {
-                tokens.push({
-                    type,
-                    value: g.map ? g.map(match) : match[0],
-                });
+                if (!g.ignore) {
+                    tokens.push({
+                        type,
+                        value: g.map ? g.map(match) : match[0],
+                    });
+                }
                 i += match[0].length;
                 break;
             }
         }
 
-        if (i < input.length) {
-            tail = input.substr(i);
-
-            const whitespaceMatch = /^\s*/.exec(tail);
-            if (whitespaceMatch) {
-                i += whitespaceMatch[0].length;
-                continue;
-            }
-
+        if (!match) {
             throw Error("Unrecognised Input: " + tail.substr(0, 10));
         }
     }
@@ -156,7 +180,7 @@ function evaluateNumeric (context, token) {
     const v = token.type === "name" ? context[token.value] : token.value;
 
     if (typeof v === "undefined") {
-        throw Error("symbol not found: " + token.value);
+        throw Error("Symbol not found: " + token.value);
     } else if (typeof v !== "number") {
         throw Error(`Variable '${token.value}' does not contain a numeric value`);
     }
@@ -164,11 +188,16 @@ function evaluateNumeric (context, token) {
     return v;
 }
 
-function assignValue (context, setContext, name, value) {
+function assignVariable (context, setContext, name, value) {
     setContext({
         ...context,
         [name]: value,
     });
+}
+
+function removeVariable (context, setContext, name) {
+    const { [name]: toRemove, ...rest } = context;
+    setContext(rest);
 }
 
 function evaluateExpression (context, t1, op, t3) {
@@ -187,6 +216,21 @@ function evaluateExpression (context, t1, op, t3) {
         }
         case "/": {
             return v1 / v3;
+        }
+        case "==": {
+            return v1 == v3;
+        }
+        case "<": {
+            return v1 < v3;
+        }
+        case ">": {
+            return v1 > v3;
+        }
+        case "<=": {
+            return v1 <= v3;
+        }
+        case ">=": {
+            return v1 >= v3;
         }
     }
 

@@ -13,6 +13,11 @@ function App() {
   const [ history , setHistory ] = React.useState([]);
   const [ context , setContext ] = React.useState(retrieveState(STATE_KEY));
 
+  function setVariables (variables) {
+    setContext(variables);
+    persistState(STATE_KEY, variables);
+  }
+
   return (
     <div className="App">
       <div className="panel">
@@ -23,8 +28,8 @@ function App() {
               { id: history.length + 1, type: "input", content: input }
             ];
             try {
-              const output = interpreter(input, context, (context) => { setContext(context); persistState(STATE_KEY, context); });
-              if (output) {
+              const output = interpreter(input, context, setVariables);
+              if (typeof output !== "undefined") {
                 newHistory.push({ id: history.length + 2, type: "output", content: output });
               }
             } catch (e) {
@@ -35,10 +40,10 @@ function App() {
         </div>
         <div className="panel panel-vertical">
           <Variables variables={context} />
-          <Graph />
+            <Graph />
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 
