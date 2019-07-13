@@ -1,8 +1,10 @@
+/** @typedef {{ [name: string]: any }} Context */
+
 /**
  *
  * @param {string} command
- * @param {{ [name: string]: any }} context
- * @param {(context: { [name: string]: any }) => void} setContext
+ * @param {Context} context
+ * @param {(context: Context) => void} setContext
  * @returns {string}
  */
 export default function interpreter (command, context, setContext) {
@@ -32,6 +34,10 @@ export default function interpreter (command, context, setContext) {
         const t1 = tokens[0];
         const t2 = tokens[1];
         const t3 = tokens[2];
+
+        if (isNumeric(context, t1) && t2.type === "range" && isNumeric(context, t3)) {
+            return JSON.stringify(range(evaluateNumeric(context, t1), evaluateNumeric(context, t3)));
+        }
 
         if (t2.type !== "operator")
         {
@@ -73,6 +79,13 @@ export default function interpreter (command, context, setContext) {
         const t4 = tokens[3];
         const t5 = tokens[4];
 
+        if (isNumeric(context, t1) && t2.type === "range" &&
+            isNumeric(context, t3) && t4.type === "range" &&
+            isNumeric(context, t5))
+        {
+            return JSON.stringify(range(evaluateNumeric(context, t1), evaluateNumeric(context, t3), evaluateNumeric(context, t5)));
+        }
+
         if (t2.type !== "operator" || t4.type !== "operator")
         {
             throw Error("Expression not supported");
@@ -113,6 +126,9 @@ const GRAMMAR = {
     bracket: {
         match: /^[()]/,
     },
+    range: {
+        match: /^:/,
+    },
     whitespace: {
         match: /^\s+/,
         ignore: true,
@@ -120,8 +136,15 @@ const GRAMMAR = {
 };
 
 /**
+ * @typedef Token
+ * @prop {string} type
+ * @prop {string|number} value
+ */
+
+/**
  *
  * @param {string} input
+ * @returns {Token[]}
  */
 function tokenizer (input) {
     let i = 0;
@@ -154,6 +177,11 @@ function tokenizer (input) {
     return tokens;
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|number|string} token
+ */
 function evaluateValue (context, token) {
     if (typeof token === "number" || typeof token === "string") {
         return token;
@@ -168,6 +196,11 @@ function evaluateValue (context, token) {
     return v;
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|any} token
+ */
 function isNumeric (context, token) {
     if (typeof token === "number") {
         return true;
@@ -188,6 +221,11 @@ function isNumeric (context, token) {
     return true;
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|any} token
+ */
 function isVector (context, token) {
     if (Array.isArray(token)) {
         return true;
@@ -208,6 +246,11 @@ function isVector (context, token) {
     return true;
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|number} token
+ */
 function evaluateNumeric (context, token) {
     if (typeof token === "number") {
         return token;
@@ -230,8 +273,8 @@ function evaluateNumeric (context, token) {
 
 /**
  *
- * @param {*} context
- * @param {*} token
+ * @param {Context} context
+ * @param {Token|number[]} token
  * @returns {number[]}
  */
 function evaluateVector (context, token) {
@@ -265,6 +308,13 @@ function removeVariable (context, setContext, name) {
     setContext(rest);
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|string|number} t1
+ * @param {string} op
+ * @param {Token|string|number} t3
+ */
 function evaluateExpression (context, t1, op, t3) {
     if (isNumeric(context, t1) && isNumeric(context, t3)) {
         return evaluteScalarExpression(context, t1, op, t3);
@@ -445,4 +495,8 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
     }
 
     throw Error("Unrecognised operator: " + op);
+}
+
+function range (start, end, step=1) {
+    return Array(Math.floor((end - start)/step) + 1).fill(0).map((n,i) => (i * step) + start);
 }

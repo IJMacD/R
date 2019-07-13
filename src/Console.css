@@ -22,6 +22,10 @@
     margin: 0;
 }
 
+.Console-history li {
+    word-break: break-word;
+}
+
 .Console-history .line-output {
     color: #666;
 }
