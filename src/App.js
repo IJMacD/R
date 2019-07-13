@@ -39,11 +39,15 @@ function App() {
           }} />
         </div>
         <div className="panel panel-vertical">
-          <Variables variables={context} />
+          <div style={{padding: 2}}>
+            <Variables variables={context} setVariables={setVariables} />
+          </div>
+          <div style={{ flex: 1 }}>
             <Graph />
           </div>
         </div>
       </div>
+    </div>
   );
 }
 
