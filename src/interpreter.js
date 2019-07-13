@@ -70,6 +70,19 @@ export default function interpreter (command, context, setContext) {
                     return;
             }
         }
+
+        if (t1.type === "name" && t2.type === "index_bracket" &&
+            t4.type === "index_bracket")
+        {
+            const v = evaluateVector(context, t1);
+            const i = evaluateNumeric(context, t3);
+
+            if (i < 1 || i >= v.length) {
+                throw Error(`Index out of range: ${i}/${v.length}`);
+            }
+
+            return JSON.stringify(v[i-1|0]);
+        }
     }
 
     if (tokens.length === 5) {
@@ -125,6 +138,9 @@ const GRAMMAR = {
     },
     bracket: {
         match: /^[()]/,
+    },
+    index_bracket: {
+        match: /^[[\]]/,
     },
     range: {
         match: /^:/,
