@@ -1,4 +1,6 @@
 /** @typedef {{ [name: string]: any }} Context */
+/** @typedef {number[]} Vector */
+/** @typedef {number|string|boolean|number[]|string[]|boolean[]} ValueTypes */
 
 /**
  *
@@ -39,10 +41,11 @@ export default function interpreter (command, context, setContext) {
             return JSON.stringify(range(evaluateNumeric(context, t1), evaluateNumeric(context, t3)));
         }
 
-        if (t2.type !== "operator")
-        {
+        if (t2.type !== "operator") {
             throw Error("Expression not supported");
         }
+
+        const op = assertString(t2.value);
 
         if (t2.value === "<-" && t1.type === "name") {
             assignVariable(context, setContext, t1.value, evaluateValue(context, t3));
@@ -52,7 +55,7 @@ export default function interpreter (command, context, setContext) {
             return;
         }
 
-        return JSON.stringify(evaluateExpression(context, t1, t2.value, t3));
+        return JSON.stringify(evaluateExpression(context, t1, op, t3));
     }
 
     if (tokens.length === 4) {
@@ -104,17 +107,21 @@ export default function interpreter (command, context, setContext) {
             throw Error("Expression not supported");
         }
 
-        if (t2.value === "<-" && (t4.value !== "<-" && t4.value !== "->") && t1.type === "name") {
-            const val = evaluateExpression(context, t3, t4.value, t5);
+        const op2 = assertString(t2.value);
+        const op4 = assertString(t4.value);
+
+        if (op2 === "<-" && (op4 !== "<-" && op4 !== "->") && t1.type === "name") {
+            const val = evaluateExpression(context, t3, op4, t5);
             assignVariable(context, setContext, t1.value, val);
             return;
-        } else if (t4.value === "->" && (t2.value !== "<-" && t2.value !== "->") && t5.type === "name") {
-            const val = evaluateExpression(context, t1, t2.value, t3);
+        } else if (op4 === "->" && (op2 !== "<-" && op2 !== "->") && t5.type === "name") {
+            const val = evaluateExpression(context, t1, op2, t3);
             assignVariable(context, setContext, t5.value, val);
             return;
         } else {
-            const val = evaluateExpression(context, t1, t2.value, t3);
-            return JSON.stringify(evaluateExpression(context, val, t4.value, t5));
+            const val = evaluateExpression(context, t1, op2, t3);
+            if (typeof val === "boolean") throw Error("Bad expression");
+            return JSON.stringify(evaluateExpression(context, val, op4, t5));
         }
     }
 
@@ -134,7 +141,7 @@ const GRAMMAR = {
         match: /^[a-z][a-z0-9_.]*/i,
     },
     operator: {
-        match: /^(<-|->|==|!=|<=|>=|&&|\|\||[-+*/<>&|])/,
+        match: /^(<-|->|==|!=|<=|>=|&&|\|\||[-+*/<>&|^])/,
     },
     bracket: {
         match: /^[()]/,
@@ -151,9 +158,11 @@ const GRAMMAR = {
     },
 };
 
+/** @typedef {"string"|"number"|"name"|"operator"|"bracket"|"index_bracket"|"range"|"whitespace"} TokenTypes */
+
 /**
  * @typedef Token
- * @prop {string} type
+ * @prop {TokenTypes} type
  * @prop {string|number} value
  */
 
@@ -170,7 +179,8 @@ function tokenizer (input) {
         let tail = input.substr(i);
         let match;
 
-        for (const type in GRAMMAR) {
+        for (const key in GRAMMAR) {
+            const type = /** @type {TokenTypes} */ (key);
             const g = GRAMMAR[type];
             match = g.match.exec(tail);
             if (match) {
@@ -215,21 +225,25 @@ function evaluateValue (context, token) {
 /**
  *
  * @param {Context} context
- * @param {Token|any} token
+ * @param {Token|ValueTypes} value
  */
-function isNumeric (context, token) {
-    if (typeof token === "number") {
+function isNumeric (context, value) {
+    if (typeof value === "number") {
         return true;
     }
 
-    if (token.type !== "number" && token.type !== "name") {
+    if (Array.isArray(value) || typeof value !== "object") {
         return false;
     }
 
-    const v = token.type === "name" ? context[token.value] : token.value;
+    if (value.type !== "number" && value.type !== "name") {
+        return false;
+    }
+
+    const v = value.type === "name" ? context[value.value] : value.value;
 
     if (typeof v === "undefined") {
-        throw Error("Symbol not found: " + token.value);
+        throw Error("Symbol not found: " + value.value);
     } else if (typeof v !== "number") {
         return false;
     }
@@ -240,21 +254,25 @@ function isNumeric (context, token) {
 /**
  *
  * @param {Context} context
- * @param {Token|any} token
+ * @param {Token|ValueTypes} value
  */
-function isVector (context, token) {
-    if (Array.isArray(token)) {
+function isVector (context, value) {
+    if (Array.isArray(value)) {
         return true;
     }
 
-    if (token.type !== "name") {
+    if (typeof value !== "object") {
         return false;
     }
 
-    const v = context[token.value];
+    if (value.type !== "name") {
+        return false;
+    }
+
+    const v = context[value.value];
 
     if (typeof v === "undefined") {
-        throw Error("Symbol not found: " + token.value);
+        throw Error("Symbol not found: " + value.value);
     } else if (!Array.isArray(v)) {
         return false;
     }
@@ -265,23 +283,31 @@ function isVector (context, token) {
 /**
  *
  * @param {Context} context
- * @param {Token|number} token
+ * @param {Token|number} value
  */
-function evaluateNumeric (context, token) {
-    if (typeof token === "number") {
-        return token;
+function evaluateNumeric (context, value) {
+    if (typeof value === "number") {
+        return value;
     }
 
-    if (token.type !== "number" && token.type !== "name") {
-        throw Error(`Invalid numeric value: [${token.value}]`);
+    if (Array.isArray(value)) {
+        throw Error(`Invalid numeric value: [Array(${value.length})]`);
     }
 
-    const v = token.type === "name" ? context[token.value] : token.value;
+    if (typeof value !== "object") {
+        throw Error(`Invalid numeric value: [${value}]`);
+    }
+
+    if (value.type !== "number" && value.type !== "name") {
+        throw Error(`Invalid numeric value: [${value.value}]`);
+    }
+
+    const v = value.type === "name" ? context[value.value] : value.value;
 
     if (typeof v === "undefined") {
-        throw Error("Symbol not found: " + token.value);
+        throw Error("Symbol not found: " + value.value);
     } else if (typeof v !== "number") {
-        throw Error(`Variable '${token.value}' does not contain a numeric value`);
+        throw Error(`Variable '${value.value}' does not contain a numeric value`);
     }
 
     return v;
@@ -327,9 +353,9 @@ function removeVariable (context, setContext, name) {
 /**
  *
  * @param {Context} context
- * @param {Token|string|number} t1
+ * @param {Token|ValueTypes} t1
  * @param {string} op
- * @param {Token|string|number} t3
+ * @param {Token|ValueTypes} t3
  */
 function evaluateExpression (context, t1, op, t3) {
     if (isNumeric(context, t1) && isNumeric(context, t3)) {
@@ -345,16 +371,20 @@ function evaluateExpression (context, t1, op, t3) {
     }
 
     if (isNumeric(context, t1) && isVector(context, t3)) {
-        if (op === ">") op = "<";
-        else if (op === ">") op = "<";
-        else if (op === ">=") op = "<=";
-        else if (op === "<=") op = ">=";
+        op = flipOperator(op);
         return evaluateVectorScalarExpression(context, t3, op, t1);
     }
 
     throw Error("Invalid expression");
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {number|Token} t1
+ * @param {string} op
+ * @param {number|Token} t3
+ */
 function evaluteScalarExpression (context, t1, op, t3) {
     const v1 = evaluateNumeric(context, t1);
     const v3 = evaluateNumeric(context, t3);
@@ -371,6 +401,9 @@ function evaluteScalarExpression (context, t1, op, t3) {
         }
         case "/": {
             return v1 / v3;
+        }
+        case "^": {
+            return Math.pow(v1, v3);
         }
         case "==": {
             return v1 == v3;
@@ -405,6 +438,13 @@ function evaluteScalarExpression (context, t1, op, t3) {
     throw Error("Unrecognised operator: " + op);
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|Vector} t1
+ * @param {string} op
+ * @param {Token|Vector} t3
+ */
 function evaluateVectorExpression (context, t1, op, t3) {
     const v1 = evaluateVector(context, t1);
     const v3 = evaluateVector(context, t3);
@@ -425,6 +465,9 @@ function evaluateVectorExpression (context, t1, op, t3) {
         }
         case "/": {
             return v1.map((v,i) => v / v3[i]);
+        }
+        case "^": {
+            return v1.map((v,i) => Math.pow(v, v3[i]));
         }
         case "==": {
             return v1.map((v,i) => v == v3[i]);
@@ -461,6 +504,13 @@ function evaluateVectorExpression (context, t1, op, t3) {
     throw Error("Unrecognised operator: " + op);
 }
 
+/**
+ *
+ * @param {Context} context
+ * @param {Token|Vector} t1
+ * @param {string} op
+ * @param {Token|number} t3
+ */
 function evaluateVectorScalarExpression (context, t1, op, t3) {
     const v1 = evaluateVector(context, t1);
     const v3 = evaluateNumeric(context, t3);
@@ -477,6 +527,9 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
         }
         case "/": {
             return v1.map(v => v / v3);
+        }
+        case "^": {
+            return v1.map(v => Math.pow(v, v3));
         }
         case "==": {
             return v1.map(v => v == v3);
@@ -515,4 +568,19 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
 
 function range (start, end, step=1) {
     return Array(Math.floor((end - start)/step) + 1).fill(0).map((n,i) => (i * step) + start);
+}
+
+function assertString (x) {
+    if (process.env.NODE_ENV === "production") return x;
+    if (typeof x !== "string") {
+        throw Error("Assertion Error");
+    }
+    return x;
+}
+
+function flipOperator (op) {
+    if (op === ">") return "<";
+    if (op === "<") return ">";
+    if (op === ">=") return "<=";
+    if (op === "<=") return ">=";
 }
