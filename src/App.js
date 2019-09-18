@@ -28,7 +28,7 @@ function App() {
               { id: history.length + 1, type: "input", content: input }
             ];
             try {
-              const output = interpreter(input, context, setVariables);
+              const output = JSON.stringify(interpreter(input, context, setVariables));
               if (typeof output !== "undefined") {
                 newHistory.push({ id: history.length + 2, type: "output", content: output });
               }
