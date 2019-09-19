@@ -16,9 +16,9 @@
    id="svg8"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    sodipodi:docname="logo.svg"
-   inkscape:export-filename="D:\Code\R\public\logo192.png"
-   inkscape:export-xdpi="576"
-   inkscape:export-ydpi="576">
+   inkscape:export-filename="D:\Code\R\public\logo512.png"
+   inkscape:export-xdpi="1536"
+   inkscape:export-ydpi="1536">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -60,14 +60,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.18251276px;line-height:1.25;font-family:Destroy;-inkscape-font-specification:Destroy;letter-spacing:0px;word-spacing:0px;fill:#0b2228;fill-opacity:1;stroke:none;stroke-width:0.17956281"
-       x="-7.276474"
-       y="-290.61908"
+       x="-295.80978"
+       y="-2.0857618"
        id="text817"
-       transform="scale(-1)"><tspan
+       transform="matrix(0,-1,-1,0,0,0)"><tspan
          sodipodi:role="line"
          id="tspan815"
-         x="-7.276474"
-         y="-290.61908"
+         x="-295.80978"
+         y="-2.0857618"
          style="fill:#0b2228;stroke-width:0.17956281">R</tspan></text>
   </g>
 </svg>

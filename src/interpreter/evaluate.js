@@ -183,10 +183,14 @@ function evaluteScalarExpression (context, t1, op, t3) {
         case "-": {
             return v1 - v3;
         }
-        case "*": {
+        case "*":
+        case "×":
+        {
             return v1 * v3;
         }
-        case "/": {
+        case "/":
+        case "÷":
+        {
             return v1 / v3;
         }
         case "^": {
@@ -195,7 +199,9 @@ function evaluteScalarExpression (context, t1, op, t3) {
         case "==": {
             return v1 == v3;
         }
-        case "!=": {
+        case "!=":
+        case "≠":
+        {
             return v1 != v3;
         }
         case "<": {
@@ -204,10 +210,16 @@ function evaluteScalarExpression (context, t1, op, t3) {
         case ">": {
             return v1 > v3;
         }
-        case "<=": {
+        case "<=":
+        case "≤":
+        case "⩽":
+        {
             return v1 <= v3;
         }
-        case ">=": {
+        case ">=":
+        case "≥":
+        case "⩾":
+        {
             return v1 >= v3;
         }
         case "&&": {
@@ -247,10 +259,14 @@ function evaluateVectorExpression (context, t1, op, t3) {
         case "-": {
             return v1.map((v,i) => v - v3[i]);
         }
-        case "*": {
+        case "*":
+        case "×":
+        {
             return v1.map((v,i) => v * v3[i]);
         }
-        case "/": {
+        case "/":
+        case "÷":
+        {
             return v1.map((v,i) => v / v3[i]);
         }
         case "^": {
@@ -259,7 +275,9 @@ function evaluateVectorExpression (context, t1, op, t3) {
         case "==": {
             return v1.map((v,i) => v == v3[i]);
         }
-        case "!=": {
+        case "!=":
+        case "≠":
+        {
             return v1.map((v,i) => v != v3[i]);
         }
         case "<": {
@@ -268,10 +286,16 @@ function evaluateVectorExpression (context, t1, op, t3) {
         case ">": {
             return v1.map((v,i) => v > v3[i]);
         }
-        case "<=": {
+        case "<=":
+        case "≤":
+        case "⩽":
+        {
             return v1.map((v,i) => v <= v3[i]);
         }
-        case ">=": {
+        case ">=":
+        case "≥":
+        case "⩾":
+        {
             return v1.map((v,i) => v >= v3[i]);
         }
         case "&": {
@@ -337,10 +361,14 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
         case "-": {
             return v1.map(v => v - v3);
         }
-        case "*": {
+        case "*":
+        case "×":
+        {
             return v1.map(v => v * v3);
         }
-        case "/": {
+        case "/":
+        case "÷":
+        {
             return v1.map(v => v / v3);
         }
         case "^": {
@@ -349,7 +377,9 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
         case "==": {
             return v1.map(v => v == v3);
         }
-        case "!=": {
+        case "!=":
+        case "≠":
+        {
             return v1.map(v => v != v3);
         }
         case "<": {
@@ -358,10 +388,16 @@ function evaluateVectorScalarExpression (context, t1, op, t3) {
         case ">": {
             return v1.map(v => v > v3);
         }
-        case "<=": {
+        case "<=":
+        case "≤":
+        case "⩽":
+        {
             return v1.map(v => v <= v3);
         }
-        case ">=": {
+        case ">=":
+        case "≥":
+        case "⩾":
+        {
             return v1.map(v => v >= v3);
         }
         case "&": {

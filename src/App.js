@@ -38,7 +38,7 @@ function App() {
             newHistory.push({ id: history.length + 2, type: "error", content: e.message });
           }
           setHistory(newHistory);
-        }} />
+        }} performReplacement={true} />
       </div>
       <div className="App-Graph">
         <Graph />

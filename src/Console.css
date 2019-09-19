@@ -30,6 +30,10 @@
     color: #666;
 }
 
+.Console-history .line-input::before {
+    content: "> ";
+}
+
 .Console-history .line-error {
     color: #D33;
 }

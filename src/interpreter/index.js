@@ -1,6 +1,7 @@
 /** @typedef {{ [name: string]: any }} Context */
 /** @typedef {number[]} Vector */
 /** @typedef {number|string|boolean|number[]|string[]|boolean[]} ValueType */
+/** @typedef {import('./tokenizer').Token} Token */
 
 import { evaluateExpression, evaluateVector, evaluateNumeric, isNumeric, evaluateValue, isVector } from './evaluate';
 import { tokenizer } from './tokenizer';
@@ -68,17 +69,17 @@ export default function interpreter (command, context, setContext) {
          * e.g.  a <- 1
          * e.g.  b <- a
          */
-        if (t2.value === "<-" && t1.type === "name") {
+        if (isAssignmentOp(t2, "left") && t1.type === "name") {
             assignVariable(context, setContext, t1.value, evaluateValue(context, t3));
             return;
         }
-        
+
         /*
          * evaluate assignment
          * e.g.  2 -> b
          * e.g.  a -> b
          */
-        if (t2.value === "->" && t3.type === "name") {
+        if (isAssignmentOp(t2, "right") && t3.type === "name") {
             assignVariable(context, setContext, t3.value, evaluateValue(context, t1));
             return;
         }
@@ -139,7 +140,7 @@ export default function interpreter (command, context, setContext) {
         const t3 = tokens[2];
         const t4 = tokens[3];
         const t5 = tokens[4];
-        
+
         /*
          * evaluate range with step
          * e.g.  1:10:2
@@ -155,8 +156,8 @@ export default function interpreter (command, context, setContext) {
          * assignment of range
          * e.g.  aa <- 1:5
          */
-        if (t1.type === "name" && 
-            t2.type === "operator" && t2.value === "<-" &&
+        if (t1.type === "name" &&
+            t2.type === "operator" && isAssignmentOp(t2, "left") &&
             isNumeric(context, t3) &&
             t4.type === "range" &&
             isNumeric(context, t5)
@@ -174,7 +175,7 @@ export default function interpreter (command, context, setContext) {
             isNumeric(context, t1) &&
             t2.type === "range" &&
             isNumeric(context, t3) &&
-            t4.type === "operator" && t4.value === "->" &&
+            t4.type === "operator" && isAssignmentOp(t4, "right") &&
             t5.type === "name"
         ) {
             const val = range(evaluateNumeric(context, t1), evaluateNumeric(context, t3));
@@ -194,22 +195,22 @@ export default function interpreter (command, context, setContext) {
          * assignment of operation
          * e.g.  a <- 1 + 5
          */
-        if (op2 === "<-" && (op4 !== "<-" && op4 !== "->") && t1.type === "name") {
+        if (isAssignmentOp(t2, "left") && !isAssignmentOp(t4) && t1.type === "name") {
             const val = evaluateExpression(context, t3, op4, t5);
             assignVariable(context, setContext, t1.value, val);
             return;
         }
-        
+
         /*
          * assignment of operation
          * e.g.  1 + 5 -> a
          */
-        if (op4 === "->" && (op2 !== "<-" && op2 !== "->") && t5.type === "name") {
+        if (isAssignmentOp(t4, "right") && !isAssignmentOp(t2) && t5.type === "name") {
             const val = evaluateExpression(context, t1, op2, t3);
             assignVariable(context, setContext, t5.value, val);
             return;
         }
-        
+
         /*
          * evaluation of double operation
          * e.g.  10 + 1 - 5
@@ -229,7 +230,7 @@ export default function interpreter (command, context, setContext) {
         const t6 = tokens[5];
 
         /*
-         * evaluation of range index 
+         * evaluation of range index
          * e.g.  aa[2:4]
          */
         if (t1.type === "name" && isVector(context, t1) &&
@@ -248,11 +249,11 @@ export default function interpreter (command, context, setContext) {
 }
 
 /**
- * 
- * @param {Context} context 
- * @param {(Context) => void} setContext 
- * @param {string} name 
- * @param {ValueType} value 
+ *
+ * @param {Context} context
+ * @param {(Context) => void} setContext
+ * @param {string} name
+ * @param {ValueType} value
  */
 function assignVariable (context, setContext, name, value) {
     setContext({
@@ -268,9 +269,9 @@ function removeVariable (context, setContext, name) {
 
 /**
  * Range from `start` to `end` inclusive. With optional `step`
- * @param {number} start 
- * @param {number} end 
- * @param {number} step 
+ * @param {number} start
+ * @param {number} end
+ * @param {number} step
  */
 function range (start, end, step=1) {
     return Array(Math.floor((end - start)/step) + 1).fill(0).map((n,i) => (i * step) + start);
@@ -282,4 +283,19 @@ function assertString (x) {
         throw Error("Assertion Error");
     }
     return x;
+}
+
+/**
+ *
+ * @param {Token} t
+ * @param {string} [dir]
+ */
+function isAssignmentOp(t, dir=null) {
+    if (t.type !== "operator") return false;
+
+    const tDir = (t.value === "<-" || t.value === "←") ? "left" :
+        (t.value === "->" || t.value === "→") ? "right" :
+        false;
+
+    return tDir && (dir ? dir === tDir : true);
 }
