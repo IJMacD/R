@@ -174,7 +174,7 @@ export default function interpreter (command, context, setContext) {
             isNumeric(context, t1) &&
             t2.type === "range" &&
             isNumeric(context, t3) &&
-            t4.type === "operator" && t4.value === "<-" &&
+            t4.type === "operator" && t4.value === "->" &&
             t5.type === "name"
         ) {
             const val = range(evaluateNumeric(context, t1), evaluateNumeric(context, t3));
@@ -266,6 +266,12 @@ function removeVariable (context, setContext, name) {
     setContext(rest);
 }
 
+/**
+ * Range from `start` to `end` inclusive. With optional `step`
+ * @param {number} start 
+ * @param {number} end 
+ * @param {number} step 
+ */
 function range (start, end, step=1) {
     return Array(Math.floor((end - start)/step) + 1).fill(0).map((n,i) => (i * step) + start);
 }
