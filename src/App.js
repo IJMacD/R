@@ -20,32 +20,28 @@ function App() {
 
   return (
     <div className="App">
-      <div className="panel">
-        <div style={{ flex: 4 }}>
-          <Console history={history} sendCommand={input => {
-            const newHistory = [
-              ...history,
-              { id: history.length + 1, type: "input", content: input }
-            ];
-            try {
-              const output = JSON.stringify(interpreter(input, context, setVariables));
-              if (typeof output !== "undefined") {
-                newHistory.push({ id: history.length + 2, type: "output", content: output });
-              }
-            } catch (e) {
-              newHistory.push({ id: history.length + 2, type: "error", content: e.message });
+      <div className="App-Variables">
+        <Variables variables={context} setVariables={setVariables} />
+      </div>
+      <div className="App-Console">
+        <Console history={history} sendCommand={input => {
+          const newHistory = [
+            ...history,
+            { id: history.length + 1, type: "input", content: input }
+          ];
+          try {
+            const output = JSON.stringify(interpreter(input, context, setVariables));
+            if (typeof output !== "undefined") {
+              newHistory.push({ id: history.length + 2, type: "output", content: output });
             }
-            setHistory(newHistory);
-          }} />
-        </div>
-        <div className="panel panel-vertical">
-          <div style={{padding: 2}}>
-            <Variables variables={context} setVariables={setVariables} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <Graph />
-          </div>
-        </div>
+          } catch (e) {
+            newHistory.push({ id: history.length + 2, type: "error", content: e.message });
+          }
+          setHistory(newHistory);
+        }} />
+      </div>
+      <div className="App-Graph">
+        <Graph />
       </div>
     </div>
   );

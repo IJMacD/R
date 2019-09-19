@@ -3,24 +3,46 @@
 }
 
 .App {
-  height: 100%;
-}
-
-.panel,
-.panel .panel {
-  border: 4px solid rgba(0,0,0,0.1);
-}
-
-.panel > * {
-  border: 1px solid rgba(0,0,0,0.7);
-}
-
-.panel {
+  padding: 4px;
+  background: #CCC;
   height: 100%;
   display: flex;
+  flex-direction: column;
+}
+
+.App-Console,
+.App-Variables,
+.App-Graph {
+  border: 1px solid rgba(0,0,0,0.7);
+  background: white;
+}
+
+.App-Console {
   flex: 1;
 }
 
-.panel-vertical {
-  flex-direction: column;
+@media (min-width: 768px) {
+  .App {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    grid-template-rows: 2fr 2fr;
+    grid-template-areas: 
+      "main variables" 
+      "main graph";
+    gap: 4px;
+  }
+
+  .App-Console {
+    grid-area: main;
+  }
+
+  .App-Variables {
+    grid-area: variables;
+  }
+
+  .App-Graph {
+    grid-area: graph;
+  }
 }
+
+
