@@ -43,7 +43,7 @@ export function isNumeric (context, value) {
     const v = value.type === "name" ? context[value.value] : value.value;
 
     if (typeof v === "undefined") {
-        throw Error("Symbol not found: " + value.value);
+        return false;
     } else if (typeof v !== "number") {
         return false;
     }
@@ -72,7 +72,7 @@ export function isVector (context, value) {
     const v = context[value.value];
 
     if (typeof v === "undefined") {
-        throw Error("Symbol not found: " + value.value);
+        return false;
     } else if (!Array.isArray(v)) {
         return false;
     }
@@ -159,8 +159,7 @@ export function evaluateExpression (context, t1, op, t3) {
     }
 
     if (isNumeric(context, t1) && isVector(context, t3)) {
-        op = flipOperator(op);
-        return evaluateVectorScalarExpression(context, t3, op, t1);
+        return evaluateScalarVectorExpression(context, t1, op, t3);
     }
 
     throw Error("Invalid expression");
@@ -295,6 +294,34 @@ function evaluateVectorExpression (context, t1, op, t3) {
 /**
  *
  * @param {Context} context
+ * @param {Token|number} t1
+ * @param {string} op
+ * @param {Token|Vector} t3
+ */
+function evaluateScalarVectorExpression (context, t1, op, t3) {
+    const n1 = evaluateNumeric(context, t1);
+    const v3 = evaluateVector(context, t3);
+
+    // Some operations are not commutative
+    switch (op) {
+        case "-": {
+            return v3.map(v => n1 - v);
+        }
+        case "/": {
+            return v3.map(v => n1 / v);
+        }
+        case "^": {
+            return v3.map(v => Math.pow(n1, v));
+        }
+        default: {
+            return evaluateVectorScalarExpression(context, v3, flipOperator(op), n1);
+        }
+    }
+}
+
+/**
+ *
+ * @param {Context} context
  * @param {Token|Vector} t1
  * @param {string} op
  * @param {Token|number} t3
@@ -359,5 +386,6 @@ function flipOperator (op) {
     if (op === "<") return ">";
     if (op === ">=") return "<=";
     if (op === "<=") return ">=";
+    if (op === "-" || op === "/" || op === "^") throw Error(`Operator ${op} is not commutative`);
     return op;
 }

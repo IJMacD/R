@@ -20,6 +20,8 @@ export default function Console (props) {
     function handleScrollback (down=false) {
         const inputs = history.filter(h => h.type === "input");
 
+        if (inputs.length === 0) return;
+
         if (down && scrollback > 1) {
             scrollback--;
         }
