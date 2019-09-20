@@ -6,6 +6,7 @@ import Variables from './Variables';
 import Graph from './Graph';
 
 import interpreter from './interpreter';
+import { Matrix } from './interpreter/matrix';
 
 const STATE_KEY = "R_VARIABLES";
 
@@ -30,9 +31,10 @@ function App() {
             { id: history.length + 1, type: "input", content: input }
           ];
           try {
-            const output = JSON.stringify(interpreter(input, context, setVariables));
-            if (typeof output !== "undefined") {
-              newHistory.push({ id: history.length + 2, type: "output", content: output });
+            const output = formatOutput(interpreter(input, context, setVariables));
+            let i = 2;
+            for (const content of output) {
+              newHistory.push({ id: history.length + (i++), type: "output", content });
             }
           } catch (e) {
             newHistory.push({ id: history.length + 2, type: "error", content: e.message });
@@ -58,6 +60,19 @@ function retrieveState (key, defaultState={}) {
   } catch (e) {
     return defaultState;
   }
+}
+
+/**
+ *
+ * @param {import('./interpreter').ValueType} value
+ * @returns {string[]}
+ */
+function formatOutput (value) {
+  if (value instanceof Matrix) {
+    return value.toString().split("\n");
+  }
+
+  return [JSON.stringify(value)];
 }
 
 export default App;

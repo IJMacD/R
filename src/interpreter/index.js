@@ -1,10 +1,11 @@
 /** @typedef {{ [name: string]: any }} Context */
 /** @typedef {number[]} Vector */
-/** @typedef {number|string|boolean|number[]|string[]|boolean[]} ValueType */
+/** @typedef {number|string|boolean|number[]|string[]|boolean[]|Matrix} ValueType */
 /** @typedef {import('./tokenizer').Token} Token */
 
 import { evaluateExpression, evaluateVector, evaluateNumeric, isNumeric, evaluateValue, isVector } from './evaluate';
 import { tokenizer } from './tokenizer';
+import { Matrix, identity } from './matrix';
 
 /**
  *
@@ -106,12 +107,20 @@ export default function interpreter (command, context, setContext) {
          * e.g.  rm(a)
          */
         if (t1.type === "name" && t2.type === "bracket" &&
-            t3.type === "name" && t4.type === "bracket")
+            t4.type === "bracket")
         {
             switch (t1.value) {
                 case "rm":
+                {
+                    if (t3.type !== "name") throw Error("Argument to `rm` must be a name");
                     removeVariable(context, setContext, t3.value);
                     return;
+                }
+                case "identity":
+                {
+                    const d = evaluateNumeric(context, t3);
+                    return identity(d);
+                }
             }
         }
 
