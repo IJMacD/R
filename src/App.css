@@ -19,6 +19,7 @@
 
 .App-Console {
   flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 768px) {
@@ -26,8 +27,8 @@
     display: grid;
     grid-template-columns: 3fr 1fr;
     grid-template-rows: 2fr 2fr;
-    grid-template-areas: 
-      "main variables" 
+    grid-template-areas:
+      "main variables"
       "main graph";
     gap: 4px;
   }

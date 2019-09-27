@@ -6,7 +6,7 @@ import Variables from './Variables';
 import Graph from './Graph';
 
 import interpreter from 'r-interpreter';
-import { Matrix } from 'r-interpreter/matrix';
+import Matrix from 'r-interpreter/matrix';
 
 const STATE_KEY = "R_VARIABLES";
 
