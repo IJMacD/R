@@ -5,8 +5,8 @@ import Console from './Console';
 import Variables from './Variables';
 import Graph from './Graph';
 
-import interpreter from './interpreter';
-import { Matrix } from './interpreter/matrix';
+import interpreter from 'r-interpreter';
+import { Matrix } from 'r-interpreter/matrix';
 
 const STATE_KEY = "R_VARIABLES";
 

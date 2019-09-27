@@ -70,6 +70,7 @@ export default function Console (props) {
                     value={input}
                     className="Console-input"
                     autoFocus
+                    autoCapitalize="off"
                     ref={inputRef}
                     onChange={handleInput}
                     onKeyDown={e => {
